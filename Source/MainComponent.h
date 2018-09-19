@@ -37,9 +37,9 @@ public:
     
     void paintItem (Graphics& g, int width, int height)
     {
-        if (isSelected())
+        if (isSelected()) {
             g.fillAll (stateGreen().withAlpha (0.3f));
-        
+        }
         
         if (type == eTutorial) {
             Font f = g.getCurrentFont();
@@ -68,6 +68,10 @@ public:
     {
         jassert(listener != nullptr);
         listener->itemSelected(this);
+
+        if (e.mods.isRightButtonDown()) {
+            printf("Right click\n");
+        }
     }
     
     String name;
@@ -75,15 +79,21 @@ public:
     Listener * listener = nullptr;
 private:
     eType type;
-    
+    bool custom;
 };
 
 
 
-class MainContentComponent   : public Component, public NameTreeItem::Listener
+class MainContentComponent   : public Component, public NameTreeItem::Listener, public MenuBarModel
 {
 public:
     //==============================================================================
+    
+    enum eMenuBarOption {
+        eLoad = 1,
+        eSave,
+    };
+    
     MainContentComponent();
     ~MainContentComponent();
 
@@ -96,13 +106,21 @@ public:
 
     void loadSection ();
 
+    StringArray getMenuBarNames();
+    PopupMenu getMenuForIndex (int topLevelMenuIndex, const String& menuName);
+    void menuItemSelected (int menuItemID, int topLevelMenuIndex);
+    
+    
 private:
     //==============================================================================
+    
+    void refreshTreeViews ();
+    
     TutorialsCollection dataModel;
     TreeView    treeView;
 
     
-    CPlusPlusCodeTokeniser token;
+    CPlusPlusCodeTokeniser tokeniser;
     
     
     CodeDocument headerDoc;
@@ -111,7 +129,7 @@ private:
     CodeEditorComponent     headerComponent;
     CodeEditorComponent     sourceComponent;
     
-    TextButton              pullBtn, pushBtn, add;
+//    TextButton              pullBtn, pushBtn, add;
     TutorialsCollection::Section    currentSection;
     bool                            nothingIsSelected;
     

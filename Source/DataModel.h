@@ -45,15 +45,22 @@ public:
     TutorialsCollection ();
     ~TutorialsCollection ();
     
+    
+    void loadTutorials (File xml);
+    
+    
     const int getTotalTutorials ();
     Tutorial getTutorial (const int index);
     
     void setXML (int tutorial, int section, File hPath, File cPath, File sPath, bool hUp, bool cUp, bool sUp );
     
     void getTotals (int &total, int & completed);
+    
+    File getRootFolderLocation ();
 private:
     Array<Tutorial> tutorials;
-    
+    File rootFolderLocation;
+    File xmlFile;
     
     
 };

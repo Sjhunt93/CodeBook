@@ -66,8 +66,13 @@ public:
                                                     DocumentWindow::allButtons)
         {
             setUsingNativeTitleBar (true);
-            setContentOwned (new MainContentComponent(), true);
-
+            MainContentComponent * content = new MainContentComponent();
+            setContentOwned (content, true);
+            setMenuBar(content);
+            
+            
+            getContentComponent()->setLookAndFeel(&look);
+            
             centreWithSize (getWidth(), getHeight());
             setVisible (true);
         }
@@ -88,6 +93,8 @@ public:
         */
 
     private:
+        LookAndFeel_V3 look;
+
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
     };
 

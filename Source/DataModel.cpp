@@ -12,25 +12,45 @@
 TutorialsCollection::TutorialsCollection ()
 {
 
-    File tutorialSettings = File::getSpecialLocation(File::SpecialLocationType::currentApplicationFile );//getChildFile("Contents").getChildFile("Resources");
-    
-
-
-
-    
-//    File xmlFile("/Users/sj4-hunt/Documents/iap.xml");// = tutorialSettings.getChildFile("tutorials.xml");
+    File tutorialSettings = File::getSpecialLocation(File::SpecialLocationType::currentApplicationFile);
     File xmlFile = tutorialSettings.getParentDirectory().getChildFile("code book files").getChildFile("iap.xml");
-    std::cout << "XML Location : " << xmlFile.getFullPathName() << "\n";
+    loadTutorials(xmlFile);
+
+    
+#if 0
+    for (int i = 0; i < tutorials.size(); i++) {
+        for (int s = 0; s < tutorials[i].sections.size(); s++) {
+            for (int t = 0; t < tutorials[i].sections[s].texts.size(); t++) {
+                printf("%i %i %s \n", i, s, tutorials[i].sections[s].texts[t].text.toRawUTF8());
+            }
+        }
+    }
+#endif
+    
+}
+TutorialsCollection::~TutorialsCollection ()
+{
+    
+}
+
+void TutorialsCollection::loadTutorials (File _xmlFile)
+{
+    xmlFile = _xmlFile;
+
     if (!xmlFile.existsAsFile()) {
         return;
     }
-
+    
+    rootFolderLocation = xmlFile.getParentDirectory();
+    
+    
     XmlDocument settingsDoc (xmlFile);
     XmlElement * root = settingsDoc.getDocumentElement();
     if (root == nullptr) {
         return;
     }
-    jassert(root != nullptr);
+    
+    tutorials.clear();
     
     for (int tut = 0; tut < root->getNumChildElements(); tut++) {
         XmlElement * tutorialElement = root->getChildElement(tut);
@@ -59,35 +79,19 @@ TutorialsCollection::TutorialsCollection ()
                 else if (type == "cpp") {
                     section.cppFile = element->getStringAttribute("src");
                     section.c = true;
-                
+                    
                 }
                 else if (type == "code") {
                     section.singleLine = element->getStringAttribute("src");
                     section.s = true;
                 }
-
+                
             }
             tutorial.sections.add(section);
             
         }
         tutorials.add(tutorial);
     }
-    //        std::cout << t.dataTree.getNumChildren() << "\n";
-    
-#if 0
-    for (int i = 0; i < tutorials.size(); i++) {
-        for (int s = 0; s < tutorials[i].sections.size(); s++) {
-            for (int t = 0; t < tutorials[i].sections[s].texts.size(); t++) {
-                printf("%i %i %s \n", i, s, tutorials[i].sections[s].texts[t].text.toRawUTF8());
-            }
-        }
-    }
-#endif
-    
-}
-TutorialsCollection::~TutorialsCollection ()
-{
-    
 }
 
 const int TutorialsCollection::getTotalTutorials ()
@@ -102,8 +106,8 @@ TutorialsCollection::Tutorial TutorialsCollection::getTutorial (const int index)
 
 void TutorialsCollection::setXML (int tutorial, int section, File hPath, File cPath, File sPath, bool hUp, bool cUp, bool sUp )
 {
-    File tutorialSettings = File::getSpecialLocation(File::SpecialLocationType::currentApplicationFile );
-    File xmlFile = tutorialSettings.getParentDirectory().getChildFile("code book files").getChildFile("iap.xml");
+//    File tutorialSettings = File::getSpecialLocation(File::SpecialLocationType::currentApplicationFile );
+//    xmlFile = tutorialSettings.getParentDirectory().getChildFile("code book files").getChildFile("iap.xml");
     jassert(xmlFile.existsAsFile());
     XmlDocument settingsDoc (xmlFile);
     XmlElement * root = settingsDoc.getDocumentElement();
@@ -130,9 +134,6 @@ void TutorialsCollection::setXML (int tutorial, int section, File hPath, File cP
     }
     
     root->writeToFile(xmlFile, "");
-
-    
-    
     
 }
 void TutorialsCollection::getTotals (int &total, int & completed)
@@ -145,12 +146,15 @@ void TutorialsCollection::getTotals (int &total, int & completed)
             int sum =   tutorials[i].sections[s].cppFile.isNotEmpty() +
                         tutorials[i].sections[s].hFile.isNotEmpty() +
                         tutorials[i].sections[s].singleLine.isNotEmpty();
-            
-            if (sum){
+            if (sum) {
                 completed++;
             }
             total++;
             
         }
     }
+}
+File TutorialsCollection::getRootFolderLocation ()
+{
+    return rootFolderLocation;
 }

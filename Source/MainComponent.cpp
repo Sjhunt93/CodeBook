@@ -10,77 +10,27 @@
 
 
 //==============================================================================
-MainContentComponent::MainContentComponent() : headerComponent(headerDoc, &token), sourceComponent(sourceDoc, &token)
+MainContentComponent::MainContentComponent() : headerComponent(headerDoc, &tokeniser), sourceComponent(sourceDoc, &tokeniser)
 {
-
     
     addAndMakeVisible(treeView);
-
     
-    NameTreeItem *root = new NameTreeItem();
-    treeView.setRootItem(root);
-    treeView.setRootItemVisible(false);
-
-    for (int i = 0; i < dataModel.getTotalTutorials(); i++) {
-        NameTreeItem * nm = new NameTreeItem();
-        nm->name = String (i+1) + ": " + dataModel.getTutorial(i).name;
-        nm->setType(NameTreeItem::eTutorial);
-        nm->sectionId = 0;
-        nm->tutoiralId = i;
-        nm->listener = this;
-        for (int j = 0; j < dataModel.getTutorial(i).sections.size(); j++) {
-            NameTreeItem * n = new NameTreeItem;
-            n->name = String(i+1) + "." + String(j+1) + ": " + dataModel.getTutorial(i).sections[j].name;
-            n->setType(NameTreeItem::eSection);
-            n->tutoiralId = i;
-            n->sectionId = j;
-            n->listener = this;
-            nm->addSubItem(n);
-            
-        }
-        root->addSubItem(nm);
-    }
+    refreshTreeViews();
     
-        setSize (1200, 700);
+    setSize (1200, 700);
     
     addAndMakeVisible(headerComponent);
     addAndMakeVisible(sourceComponent);
     
-//    headerComponent.setReadOnly(true);
-//    sourceComponent.setReadOnly(true);
-    
-//    File f1("/Users/sj4-hunt/Documents/UWE Staff/IAP 2018:2019/IAP DEV 1/Source/IAP.cpp");
-//    File f2("/Users/sj4-hunt/Documents/UWE Staff/IAP 2018:2019/IAP DEV 1/Source/IAP.h");
-//    
-//    FileInputStream s1(f1);
-//    sourceDoc.loadFromStream(s1);
-//    
-//    FileInputStream s2(f2);
-//    headerDoc.loadFromStream(s2);
-    
-//    addAndMakeVisible(pullBtn);
-//    addAndMakeVisible(pushBtn);
-    pullBtn.setButtonText("Insert from xcode");
-    pushBtn.setButtonText("Transfer back to xcode");
 
     nothingIsSelected = true;
     
-//    addAndMakeVisible(add);
-//    add.setButtonText("Add");
 }
 
 
 MainContentComponent::~MainContentComponent()
 {
-#if 0
-    int numberA = 0;
-    std::cout << "Please enter a number : \n";
-    std::cin >> numberA;
-    
-    int numberB = 0;
-    std::cout << "Please enter a number : \n";
-    std::cin >> numberB;
-#endif
+    treeView.setRootItem(nullptr);
 }
 
 void MainContentComponent::paint (Graphics& g)
@@ -102,18 +52,15 @@ void MainContentComponent::paint (Graphics& g)
     
     String exercises = "Exercises Complete: " + String(b) + "/" + String(a) + "\n";
 //    g.drawText(exercises, 5, getHeight() - 45, dif, 30, Justification::left);
-    
 
     
     g.setFont(24);
     g.drawText("IAP.cpp", treeViewWidth + 10, 5, dif, 35, Justification::centred);
+    
     if (headerComponent.isVisible()) {
-    g.drawText("IAP.h", treeViewWidth + dif + 10, 5, dif, 35, Justification::centred);
+        g.drawText("IAP.h", treeViewWidth + dif + 10, 5, dif, 35, Justification::centred);
     }
 
-    
-    
-//    g.drawText("", <#int x#>, <#int y#>, <#int width#>, <#int height#>, <#juce::Justification justificationType#>)
 }
 
 void MainContentComponent::paintOverChildren (Graphics& g)
@@ -146,8 +93,8 @@ void MainContentComponent::resized()
     }
     
     
-    pullBtn.setBounds(treeView.getRight() + 10, 5, 200, 35);
-    pushBtn.setBounds(getWidth() - 210, 5, 200, 35);
+//    pullBtn.setBounds(treeView.getRight() + 10, 5, 200, 35);
+//    pushBtn.setBounds(getWidth() - 210, 5, 200, 35);
     
 }
 
@@ -158,12 +105,12 @@ void MainContentComponent::loadSection ()
         headerComponent.setVisible(false);
         
         if (currentSection.cppFile.isNotEmpty()) {
-            File f1 = File::getSpecialLocation(File::SpecialLocationType::currentApplicationFile).getParentDirectory().getChildFile("code book files").getChildFile(currentSection.cppFile);
+            File f1 =  dataModel.getRootFolderLocation().getChildFile(currentSection.cppFile);
             if (f1.exists()) {
                 FileInputStream s1(f1);
                 sourceDoc.loadFromStream(s1);
             }
-            }
+        }
           
         else {
             sourceDoc.deleteSection(0, sourceDoc.getNumCharacters());
@@ -175,7 +122,7 @@ void MainContentComponent::loadSection ()
         
         headerComponent.setVisible(true);
         if (currentSection.cppFile.isNotEmpty()) {
-            File f1 = File::getSpecialLocation(File::SpecialLocationType::currentApplicationFile).getParentDirectory().getChildFile("code book files").getChildFile(currentSection.cppFile);
+            File f1 = dataModel.getRootFolderLocation().getChildFile(currentSection.cppFile);
             if (f1.exists()) {
                 FileInputStream s1(f1);
                 sourceDoc.loadFromStream(s1);
@@ -187,7 +134,7 @@ void MainContentComponent::loadSection ()
             sourceDoc.deleteSection(0, sourceDoc.getNumCharacters());
         }
         if (currentSection.hFile.isNotEmpty()) {
-            File f1 = File::getSpecialLocation(File::SpecialLocationType::currentApplicationFile).getParentDirectory().getChildFile("code book files").getChildFile(currentSection.hFile);
+            File f1 = dataModel.getRootFolderLocation().getChildFile(currentSection.hFile);
             if (f1.exists()) {
                 FileInputStream s1(f1);
                 headerDoc.loadFromStream(s1);
@@ -212,11 +159,15 @@ void MainContentComponent::itemSelected (NameTreeItem * item)
      */
  
     if (!nothingIsSelected) {
+#if 0
         File root = File::getSpecialLocation(File::SpecialLocationType::currentApplicationFile ).getParentDirectory();
         if (!root.getChildFile("code book files").exists()) {
             root.getChildFile("code book files").createDirectory();
         }
         File codeFles = root.getChildFile("code book files");
+#else
+        File codeFles = dataModel.getRootFolderLocation();
+#endif
         
         String fName = String(currentSection.tutorialId) + "_" + String(currentSection._id);
         
@@ -252,4 +203,71 @@ void MainContentComponent::itemSelected (NameTreeItem * item)
     currentSection = dataModel.getTutorial(item->tutoiralId).sections[item->sectionId];
     loadSection();
 
+}
+
+StringArray MainContentComponent::getMenuBarNames()
+{
+    return {"file"};
+}
+PopupMenu MainContentComponent::getMenuForIndex (int topLevelMenuIndex, const String& menuName)
+{
+    PopupMenu pm;
+    pm.addItem(eLoad, "Load");
+    pm.addItem(eSave, "Save");
+    return pm;
+    
+    
+}
+void MainContentComponent::menuItemSelected (int menuItemID, int topLevelMenuIndex)
+{
+    if (menuItemID == eLoad) {
+        FileChooser chooser ("Load Session",
+                             File::nonexistent,
+                             "*.xml");
+        if (chooser.browseForFileToOpen())
+        {
+            File file (chooser.getResult());
+            
+            if (file.existsAsFile()) {
+                dataModel.loadTutorials(file);
+                refreshTreeViews();
+            }
+
+            
+        }
+
+        
+    }
+}
+
+void MainContentComponent::refreshTreeViews ()
+{
+    treeView.setRootItem(nullptr); //clear an old one if needed.
+    NameTreeItem *root = new NameTreeItem();
+    treeView.setRootItem(root);
+    treeView.setRootItemVisible(false);
+    
+    for (int i = 0; i < dataModel.getTotalTutorials(); i++) {
+        NameTreeItem * nm = new NameTreeItem();
+        nm->name = String (i+1) + ": " + dataModel.getTutorial(i).name;
+        nm->setType(NameTreeItem::eTutorial);
+        nm->sectionId = 0;
+        nm->tutoiralId = i;
+        nm->listener = this;
+        for (int j = 0; j < dataModel.getTutorial(i).sections.size(); j++) {
+            NameTreeItem * n = new NameTreeItem;
+            n->name = String(i+1) + "." + String(j+1) + ": " + dataModel.getTutorial(i).sections[j].name;
+            n->setType(NameTreeItem::eSection);
+            n->tutoiralId = i;
+            n->sectionId = j;
+            n->listener = this;
+            nm->addSubItem(n);
+            
+        }
+        root->addSubItem(nm);
+    }
+    
+    sourceDoc.replaceAllContent("");
+    headerDoc.replaceAllContent("");
+    
 }

@@ -4,7 +4,7 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
-		<key>CodeBook.xcscheme</key>
+		<key>CodeBook - App.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
@@ -12,7 +12,7 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
-		<key>6647F4A47C5FC5B78A3FCA58</key>
+		<key>C595610336D73811FA871DBC</key>
 		<dict>
 			<key>primary</key>
 			<true/>
