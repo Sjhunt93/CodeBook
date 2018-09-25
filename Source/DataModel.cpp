@@ -45,7 +45,7 @@ void TutorialsCollection::loadTutorials (File _xmlFile)
     
     
     XmlDocument settingsDoc (xmlFile);
-    XmlElement * root = settingsDoc.getDocumentElement();
+    ScopedPointer<XmlElement> root = settingsDoc.getDocumentElement();
     if (root == nullptr) {
         return;
     }
@@ -64,10 +64,11 @@ void TutorialsCollection::loadTutorials (File _xmlFile)
             Section section;
             section.name = itemXml->getStringAttribute("name");
             section.typeToUse = (eType) itemXml->getStringAttribute("type").getIntValue();
-            jassert(section.typeToUse >= eCppOnly && section.typeToUse <= eFragment);
+            jassert(section.typeToUse >= eCppOnly && section.typeToUse <= eCustom);
             
             section._id = s;
             section.tutorialId = tut;
+            
             
             for (int i = 0; i < itemXml->getNumChildElements(); i++) {
                 XmlElement * element = itemXml->getChildElement(i);
@@ -110,12 +111,13 @@ void TutorialsCollection::setXML (int tutorial, int section, File hPath, File cP
 //    xmlFile = tutorialSettings.getParentDirectory().getChildFile("code book files").getChildFile("iap.xml");
     jassert(xmlFile.existsAsFile());
     XmlDocument settingsDoc (xmlFile);
-    XmlElement * root = settingsDoc.getDocumentElement();
+    ScopedPointer<XmlElement> root = settingsDoc.getDocumentElement();
     
     
     
     XmlElement * tutorialElement = root->getChildElement(tutorial);
     XmlElement * activityXml = tutorialElement->getChildElement(section);
+    
     
     if (hUp) {
         XmlElement * element = activityXml->getChildElement(0);
@@ -157,4 +159,74 @@ void TutorialsCollection::getTotals (int &total, int & completed)
 File TutorialsCollection::getRootFolderLocation ()
 {
     return rootFolderLocation;
+}
+
+void TutorialsCollection::addEntry (const int tutorial, const int afterSection)
+{
+//    Tutorial t;
+//    t.name = "name";
+//    t._id = tutorials[tutorial].sections.size();
+//    t.
+    
+    Section sec;
+    sec._id = tutorials[tutorial].sections.size();
+    sec.name = "";
+    sec.tutorialId = tutorial;
+    sec.locked = false;
+    sec.typeToUse = eType::eCustom;
+    
+    const int size = tutorials[tutorial].sections.size();
+    
+    tutorials.getRawDataPointer()[tutorial].sections.add(sec);
+    
+    const int size2 = tutorials[tutorial].sections.size();
+    
+    jassert(size2 > size);
+    
+//    setXML(tutorial, tutorials[tutorial].sections.size(), File(""), File(""), File(""), false, false, false);
+ 
+    XmlDocument settingsDoc (xmlFile);
+    ScopedPointer<XmlElement> root = settingsDoc.getDocumentElement();
+    
+    
+    
+    XmlElement * tutorialElement = root->getChildElement(tutorial);
+    XmlElement * activityXml = tutorialElement->createNewChildElement("item");
+    
+    activityXml->setAttribute("name", "unnamed");
+    activityXml->setAttribute("type", eType::eCustom);
+    
+    activityXml->createNewChildElement("h");
+    activityXml->createNewChildElement("cpp");
+    activityXml->createNewChildElement("code");
+    
+
+    {
+        XmlElement * element = activityXml->getChildElement(0);
+        element->setAttribute("src", "");
+    }
+    {
+        XmlElement * element = activityXml->getChildElement(1);
+        element->setAttribute("src", "");
+    }
+    {
+        XmlElement * element = activityXml->getChildElement(2);
+        element->setAttribute("src", "");
+    }
+    
+    root->writeToFile(xmlFile, "");
+    
+}
+
+void TutorialsCollection::setName (int tutorial, int section, String name)
+{
+    XmlDocument settingsDoc (xmlFile);
+ScopedPointer<XmlElement> root = settingsDoc.getDocumentElement();
+    XmlElement * tutorialElement = root->getChildElement(tutorial);
+    XmlElement * activityXml = tutorialElement->getChildElement(section);
+    activityXml->setAttribute("name", name);
+    
+    tutorials.getRawDataPointer()[tutorial].sections.getRawDataPointer()[section].name = name;
+    
+    root->writeToFile(xmlFile, "");
 }

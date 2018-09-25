@@ -20,6 +20,7 @@ public:
         eCppOnly = 0,
         eBoth,
         eFragment,
+        eCustom,
     };
     
     struct Section {
@@ -34,6 +35,7 @@ public:
         eType typeToUse;
         String name;
         int tutorialId;
+        bool locked; //This is used for adding more entries, as some of them cant be removed as they are required for the course..
     };
     
     struct Tutorial {
@@ -53,10 +55,14 @@ public:
     Tutorial getTutorial (const int index);
     
     void setXML (int tutorial, int section, File hPath, File cPath, File sPath, bool hUp, bool cUp, bool sUp );
+    void setName (int tutorial, int section, String name);
     
     void getTotals (int &total, int & completed);
     
     File getRootFolderLocation ();
+    
+    void addEntry (const int tutorial, const int afterSection);
+    
 private:
     Array<Tutorial> tutorials;
     File rootFolderLocation;

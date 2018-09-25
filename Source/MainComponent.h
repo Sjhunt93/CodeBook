@@ -10,78 +10,14 @@
 #define MAINCOMPONENT_H_INCLUDED
 
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "DataModel.h"
+#include "NameTreeItem.h"
+
 
 //==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-
-
-static const Colour stateGreen () {return Colour(52,200,73);}
-
-class NameTreeItem : public TreeViewItem {
-public:
-    
-    enum eType {
-        eTutorial,
-        eSection,
-    };
-    class Listener {
-    public:
-        virtual ~Listener() {}
-        virtual void itemSelected (NameTreeItem * item) = 0;
-    };
-    
-    
-    void paintItem (Graphics& g, int width, int height)
-    {
-        if (isSelected()) {
-            g.fillAll (stateGreen().withAlpha (0.3f));
-        }
-        
-        if (type == eTutorial) {
-            Font f = g.getCurrentFont();
-            f.setBold(true);
-            g.setFont(f);
-        }
-        g.setColour(Colours::white);
-        g.drawText(name, 0, 0, width, height, Justification::centredLeft);
-    }
-    
-    
-    void setType (eType type)
-    {
-        this->type = type;
-    }
-    
-    bool mightContainSubItems()
-    {
-        if (type == eTutorial) {
-            return true;
-        }
-        return false;
-    }
-    
-    void itemClicked (const MouseEvent& e)
-    {
-        jassert(listener != nullptr);
-        listener->itemSelected(this);
-
-        if (e.mods.isRightButtonDown()) {
-            printf("Right click\n");
-        }
-    }
-    
-    String name;
-    int tutoiralId, sectionId;
-    Listener * listener = nullptr;
-private:
-    eType type;
-    bool custom;
-};
-
 
 
 class MainContentComponent   : public Component, public NameTreeItem::Listener, public MenuBarModel
@@ -92,6 +28,9 @@ public:
     enum eMenuBarOption {
         eLoad = 1,
         eSave,
+        //
+        eAddEntry,
+        eRemoveEntry,
     };
     
     MainContentComponent();
@@ -103,6 +42,7 @@ public:
     void resized();
     
     void itemSelected (NameTreeItem * item);
+    void itemRenamed (NameTreeItem * item, String newName);
 
     void loadSection ();
 
@@ -132,6 +72,8 @@ private:
 //    TextButton              pullBtn, pushBtn, add;
     TutorialsCollection::Section    currentSection;
     bool                            nothingIsSelected;
+    NameTreeItem            *       currentlySelected;
+    
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainContentComponent)
 };

@@ -24,13 +24,15 @@ MainContentComponent::MainContentComponent() : headerComponent(headerDoc, &token
     
 
     nothingIsSelected = true;
-    
+    currentlySelected = nullptr;
+
 }
 
 
 MainContentComponent::~MainContentComponent()
 {
-    treeView.setRootItem(nullptr);
+//    treeView.setRootItem(nullptr);
+    delete treeView.getRootItem();
 }
 
 void MainContentComponent::paint (Graphics& g)
@@ -75,9 +77,7 @@ void MainContentComponent::paintOverChildren (Graphics& g)
 
 void MainContentComponent::resized()
 {
-    // This is called when the MainContentComponent is resized.
-    // If you add any child components, this is where you should
-    // update their positions.
+
     const int treeViewWidth = 300;
     treeView.setBounds(0, 0, treeViewWidth, getHeight() - 50);
     
@@ -110,6 +110,9 @@ void MainContentComponent::loadSection ()
                 FileInputStream s1(f1);
                 sourceDoc.loadFromStream(s1);
             }
+            else {
+                sourceDoc.replaceAllContent("");
+            }
         }
           
         else {
@@ -118,7 +121,7 @@ void MainContentComponent::loadSection ()
         
     
     }
-    else if (currentSection.typeToUse == TutorialsCollection::eBoth) {
+    else if (currentSection.typeToUse == TutorialsCollection::eBoth || currentSection.typeToUse == TutorialsCollection::eCustom) {
         
         headerComponent.setVisible(true);
         if (currentSection.cppFile.isNotEmpty()) {
@@ -126,6 +129,9 @@ void MainContentComponent::loadSection ()
             if (f1.exists()) {
                 FileInputStream s1(f1);
                 sourceDoc.loadFromStream(s1);
+            }
+            else {
+                sourceDoc.replaceAllContent("");
             }
 
             
@@ -138,6 +144,9 @@ void MainContentComponent::loadSection ()
             if (f1.exists()) {
                 FileInputStream s1(f1);
                 headerDoc.loadFromStream(s1);
+            }
+            else {
+                headerDoc.replaceAllContent("");
             }
 
         }
@@ -203,7 +212,15 @@ void MainContentComponent::itemSelected (NameTreeItem * item)
     currentSection = dataModel.getTutorial(item->tutoiralId).sections[item->sectionId];
     loadSection();
 
+    currentlySelected = item;
 }
+
+void MainContentComponent::itemRenamed (NameTreeItem * item, String newName)
+{
+    dataModel.setName(item->tutoiralId, item->sectionId, newName);
+    refreshTreeViews();
+}
+
 
 StringArray MainContentComponent::getMenuBarNames()
 {
@@ -214,6 +231,12 @@ PopupMenu MainContentComponent::getMenuForIndex (int topLevelMenuIndex, const St
     PopupMenu pm;
     pm.addItem(eLoad, "Load");
     pm.addItem(eSave, "Save");
+    bool canEdit = false;
+    if (currentlySelected != nullptr) {
+        canEdit = currentSection.typeToUse == TutorialsCollection::eType::eCustom;
+    }
+    pm.addItem(eAddEntry, "Add Custom Entry", canEdit);
+//    pm.addItem(eAddEntry, "Remove", canEdit);
     return pm;
     
     
@@ -235,14 +258,23 @@ void MainContentComponent::menuItemSelected (int menuItemID, int topLevelMenuInd
 
             
         }
-
-        
+    }
+    else if (menuItemID == eSave) {
+        if (currentlySelected != nullptr) {
+            itemSelected(currentlySelected); //force save. - in reality everything gets saved all the time
+        }
+    }
+    else if (menuItemID == eAddEntry) {
+        if (currentlySelected != nullptr) {
+            dataModel.addEntry(currentSection.tutorialId, 0);
+            refreshTreeViews();
+        }
     }
 }
 
 void MainContentComponent::refreshTreeViews ()
 {
-    treeView.setRootItem(nullptr); //clear an old one if needed.
+    treeView.deleteRootItem();
     NameTreeItem *root = new NameTreeItem();
     treeView.setRootItem(root);
     treeView.setRootItemVisible(false);
@@ -262,6 +294,8 @@ void MainContentComponent::refreshTreeViews ()
             n->sectionId = j;
             n->listener = this;
             nm->addSubItem(n);
+
+            n->custom = dataModel.getTutorial(i).sections[j].typeToUse == TutorialsCollection::eType::eCustom;
             
         }
         root->addSubItem(nm);
@@ -269,5 +303,8 @@ void MainContentComponent::refreshTreeViews ()
     
     sourceDoc.replaceAllContent("");
     headerDoc.replaceAllContent("");
+    currentlySelected = nullptr;
+    nothingIsSelected = true;
+    
     
 }
